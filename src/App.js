@@ -49,6 +49,40 @@ class App extends React.Component {
     this.state = initialState;
   }
 
+  componentDidMount() {
+    const token = sessionStorage.getItem("token");
+
+    if (token) {
+      fetch("https://vast-falls-95156.herokuapp.com/signin", {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
+      })
+        .then((resp) => resp.json())
+        .then((data) => {
+          if (data && data.id) {
+            fetch(`https://vast-falls-95156.herokuapp.com/profile/${data.id}`, {
+              method: "get",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: token,
+              },
+            })
+              .then((resp) => resp.json())
+              .then((user) => {
+                if (user && user.email) {
+                  this.loadUser(user);
+                  this.onRouteChange("home");
+                }
+              });
+          }
+        })
+        .catch(console.log);
+    }
+  }
+
   loadUser = (data) => {
     this.setState({
       user: {
@@ -64,22 +98,27 @@ class App extends React.Component {
   };
 
   calculateFaceLocation = (data) => {
-    return data.outputs[0].data.regions.map((face) => {
-      const clarifaiFace = face.region_info.bounding_box;
-      const image = document.getElementById("inputimage");
-      const width = Number(image.width);
-      const height = Number(image.height);
-      return {
-        leftCol: clarifaiFace.left_col * width,
-        topRow: clarifaiFace.top_row * height,
-        rightCol: width - clarifaiFace.right_col * width,
-        bottomRow: height - clarifaiFace.bottom_row * height,
-      };
-    });
+    if (data && data.outputs) {
+      return data.outputs[0].data.regions.map((face) => {
+        const clarifaiFace = face.region_info.bounding_box;
+        const image = document.getElementById("inputimage");
+        const width = Number(image.width);
+        const height = Number(image.height);
+        return {
+          leftCol: clarifaiFace.left_col * width,
+          topRow: clarifaiFace.top_row * height,
+          rightCol: width - clarifaiFace.right_col * width,
+          bottomRow: height - clarifaiFace.bottom_row * height,
+        };
+      });
+    }
+    return;
   };
 
   displayFaceBox = (box) => {
-    this.setState({ box });
+    if (box) {
+      this.setState({ box });
+    }
   };
 
   onInputChange = (event) => {
@@ -90,7 +129,10 @@ class App extends React.Component {
     this.setState({ imageUrl: this.state.input });
     fetch("https://vast-falls-95156.herokuapp.com/imageurl", {
       method: "post",
-      headers: { "Content-type": "application/json" },
+      headers: {
+        "Content-type": "application/json",
+        Authorization: sessionStorage.getItem("token"),
+      },
       body: JSON.stringify({
         input: this.state.input,
       }),
@@ -100,7 +142,10 @@ class App extends React.Component {
         if (response) {
           fetch("https://vast-falls-95156.herokuapp.com/image", {
             method: "put",
-            headers: { "Content-type": "application/json" },
+            headers: {
+              "Content-type": "application/json",
+              Authorization: sessionStorage.getItem("token"),
+            },
             body: JSON.stringify({
               id: this.state.user.id,
             }),
@@ -133,14 +178,8 @@ class App extends React.Component {
   };
 
   render() {
-    const {
-      imageUrl,
-      box,
-      route,
-      isSignedIn,
-      isProfileOpen,
-      user,
-    } = this.state;
+    const { imageUrl, box, route, isSignedIn, isProfileOpen, user } =
+      this.state;
     return (
       <div className="App">
         <Particles className="particles" params={particleOptions} />

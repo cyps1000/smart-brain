@@ -29,14 +29,22 @@ class Profile extends React.Component {
   };
 
   onProfileUpdate = (data) => {
-    fetch(`http://localhost:3000/profile/${this.props.user.id}`, {
-      method: "post",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ formInput: data }),
-    })
+    fetch(
+      `https://vast-falls-95156.herokuapp.com/profile/${this.props.user.id}`,
+      {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: sessionStorage.getItem("token"),
+        },
+        body: JSON.stringify({ formInput: data }),
+      }
+    )
       .then((resp) => {
-        this.props.toggleModal();
-        this.props.loadUser({ ...this.props.user, ...data });
+        if (resp.status === 200 || resp.status === 304) {
+          this.props.toggleModal();
+          this.props.loadUser({ ...this.props.user, ...data });
+        }
       })
       .catch(console.log);
   };
