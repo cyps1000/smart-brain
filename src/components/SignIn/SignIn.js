@@ -34,7 +34,8 @@ class SignIn extends React.Component {
     })
       .then((response) => response.json())
       .then((data) => {
-        if (data.userId && data.success === true) {
+        console.log(data);
+        if (data.userId && data.success === "true") {
           this.saveAuthTokenInSession(data.token);
           fetch(
             `https://vast-falls-95156.herokuapp.com/profile/${data.userId}`,
